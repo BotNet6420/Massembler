@@ -9,6 +9,6 @@
 
 #define LINE_LENGTH 128
 
-void first_pass(FILE* input);
+int first_pass(FILE* input);
 
 #endif //ASSEMBLER_SYMBOL_TABLE_H

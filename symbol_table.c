@@ -9,7 +9,7 @@
 #include "symbol_table.h"
 
 // region prototypes
-int is_valid_label(const char token[5]);
+int is_valid_label(char* token);
 // endregion
 
 typedef struct {
@@ -176,54 +176,177 @@ void free_labels(void) {
 }
 // endregion
 
-void first_pass(FILE* input) {
+/**
+ * Perform the first assembler pass on the source code to generate
+ * the symbol table for user labels with their addresses
+ * @param input the source code file
+ * @return 0 on success, non-zero on failure
+ */
+int first_pass(FILE* input) {
     char line[LINE_LENGTH];
-    int line_counter = 0;
+    uint16_t line_counter = 0;
+    uint16_t file_counter = 0; // to be used by error messages to report the problematic line
 
     while (fgets(line, LINE_LENGTH, input) != NULL) {
+        file_counter++;
+        if (strchr(line, '\n') == NULL && feof(input) == 0) {
+            // TODO: ERROR(line too long; cannot parse)
+            return 1;
+        }
 
-        char label[] = {line[0], line[1], line[2], line[3], '\0'};
-        if (is_valid_label(label)) {
-            label[4] = '\0';
-            add_label(label, line_counter);
+        char copy[LINE_LENGTH];
+        strcpy(copy, line);
+
+        char* part1 = strtok(copy, " \t\r\n");
+        char* part2 = strtok(NULL, " \t\r\n");
+
+        // skip empty lines
+        if (part1 == NULL) {
+            continue;
+        }
+
+        // check for first column being a label
+        if (is_valid_label(part1)) {
+            // address overflow
+            if (line_counter > 0xfff) {
+                // TODO: ERROR(address overflow; program too large)
+                return 1;
+            }
+
+            // catch label on empty line
+            if (part2 == NULL) {
+                // TODO: ERROR(missing instruction)
+                return 1;
+            }
+
+            // ORG and END cannot have labels
+            if (strcmp(part2, "ORG") == 0) {
+                // TODO: Error(ORG cannot have label)
+                return 1;
+            }
+            if (strcmp(part2, "END") == 0) {
+                // TODO: Error(END cannot have label)
+                return 1;
+            }
+
+            // try to add the label
+            int result = add_label(part1, line_counter);
+            if (result == 1) {
+                // TODO: ERROR(duplicate symbol)
+                return 1;
+            }
+            if (result == 2) {
+                // TODO: ERROR(out-of-memory)
+                return 1;
+            }
             line_counter++;
             continue;
         }
 
-        label[4] = '\0';
-        if (strcmp(label, "ORG") == 0) {
-            char* argument = &line[3];
-            int new_line_counter = 0;
-            if (sscanf(argument, "%d", &new_line_counter) != 1) {
-                // TODO: error(expected address)
-                return;
+        // not a label, check ORG
+        if (strcmp(part1, "ORG") == 0) {
+            // check address exists
+            if (part2 == NULL) {
+                // TODO: ERROR(ORG missing operand)
+                return 1;
             }
-            line_counter = new_line_counter;
+
+            // try parse the number
+            unsigned int number = 0;
+            if (sscanf(part2, " %x", &number) != 1) {
+                // TODO: ERROR(no address found)
+                return 1;
+            }
+
+            // catch syntax errors (trailing non-whitespace character)
+            char dummy;
+            if (sscanf(part2, " %x %c", &number, &dummy) != 1 || strtok(NULL, " \t\r\n") != NULL) {
+                // TODO: ERROR(invalid address)
+                return 1;
+            }
+
+            // address out of bounds
+            if (number > 0xfff) {
+                // TODO: ERROR(address too large)
+                return 1;
+            }
+            line_counter = (uint16_t) number;
             continue;
         }
 
-        if (strcmp(label, "END") == 0) {
-            return;
+        // exit first pass
+        if (strcmp(part1, "END") == 0) {
+            if (part2 != NULL) {
+                // TODO: ERROR(unexpected operand after END)
+                return 1;
+            }
+
+            return 0;
+        }
+
+        // address overflow
+        if (line_counter > 0xfff) {
+            // TODO: ERROR(address overflow; program too large)
+            return 1;
         }
         line_counter++;
     }
+    // TODO: ERROR(EOF without END instruction)
+    return 1;
 }
 
-int is_valid_label(const char token[5]) {
-    if (!isalpha(token[0]))
-        return 0;
-
-    if (token[1] == ',')
+/**
+ * @param token a 3character token from the sourcecode
+ * @return 1 if the token is a reserved instruction, 0 if it is not
+ */
+int is_reserved(const char token[4]) {
+    if (get_pseudoinstruction(token) != INVALID_pseudoinstruction) {
         return 1;
-
-    if (!isalnum(token[1]))
-        return 0;
-
-    if (token[2] == ',')
+    }
+    if (get_memory_instruction_index(token) != -1) {
         return 1;
+    }
+    if (get_non_memory_instruction_index(token) != -1) {
+        return 1;
+    }
+    return 0;
+}
 
-    if (!isalnum(token[2]))
+/**
+ * checks a string for label validity
+ * 1. Must start with a letter
+ * 2. must be at least 1, and at most 3 character
+ * 3. characters 2 and 3 can be alphanumeric
+ * 4. must be terminated by a comma
+ * @param token the string to be tested for label validity (must contain the trailing comma)
+ * @return 1 if the string is a valid label, 0 if not
+ */
+int is_valid_label(char* token) {
+    if (token == NULL)
         return 0;
 
-    return token[3] == ',';
+    size_t length = strlen(token);
+    if (length <= 0) {
+        return 0;
+    }
+
+    if (token[length - 1] != ',') {
+        return 0;
+    }
+
+    token[length - 1] = '\0';
+    length -= 1;
+
+    if (length < 1 || length > 3)
+        return 0;
+
+    if (!isalpha((unsigned char)token[0]))
+        return 0;
+
+    for (size_t i = 1; i < length; i++) {
+        if (!isalnum((unsigned char)token[i]))
+            return 0;
+    }
+
+    return !is_reserved(token);
 }
