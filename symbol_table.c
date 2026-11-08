@@ -2,10 +2,45 @@
 // Created by botnet64 on 11/8/26.
 //
 
+#include <ctype.h>
 #include <string.h>
 #include "symbol_table.h"
 
-#include <ctype.h>
+// region prototypes
+void add_label(char* label, int lc);
+int is_label(const char token[5]);
+// endregion
+
+// region pseudoinstruction
+const char *pseudoinstruction_table[] = {
+    "ORG",
+    "END",
+    "DEC",
+    "HEX"
+};
+
+enum pseudoinstruction {
+    INVALID_pseudoinstruction = -1,
+    ORG = 0,
+    END = 1,
+    DEC = 2,
+    HEX = 3,
+};
+
+
+enum pseudoinstruction get_pseudoinstruction(const char token[4]) {
+    for (int i = 0; i < 4; i++) {
+        if (strcmp(token, pseudoinstruction_table[i]) == 0) {
+            return i;
+        }
+    }
+    return INVALID_pseudoinstruction;
+}
+
+int is_pseudoinstruction(const char token[4]) {
+    return get_pseudoinstruction(token) != INVALID_pseudoinstruction;
+}
+// endregion
 
 void first_pass(FILE* input) {
     char line[LINE_LENGTH];
