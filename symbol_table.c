@@ -73,6 +73,42 @@ int is_memory_instruction(const char token[4]) {
 }
 // endregion
 
+// region non-MRI
+const instruction non_memory_instructions[] = {
+    {.symbol = "CLA", .binary_code = 0x7800}, // register reference instructions
+    {.symbol = "CLE", .binary_code = 0x7400},
+    {.symbol = "CMA", .binary_code = 0x7200},
+    {.symbol = "CME", .binary_code = 0x7100},
+    {.symbol = "CIR", .binary_code = 0x7080},
+    {.symbol = "CIL", .binary_code = 0x7040},
+    {.symbol = "INC", .binary_code = 0x7020},
+    {.symbol = "SPA", .binary_code = 0x7008},
+    {.symbol = "SNA", .binary_code = 0x7004},
+    {.symbol = "SZA", .binary_code = 0x7004},
+    {.symbol = "SZE", .binary_code = 0x7002},
+    {.symbol = "HLT", .binary_code = 0x7001},
+    {.symbol = "INP", .binary_code = 0xF800}, // I/O reference instruction
+    {.symbol = "OUT", .binary_code = 0xF400},
+    {.symbol = "SKI", .binary_code = 0xF200},
+    {.symbol = "SKO", .binary_code = 0xF100},
+    {.symbol = "ION", .binary_code = 0xF080},
+    {.symbol = "IOF", .binary_code = 0xF040}
+};
+
+int get_non_memory_instruction_index(const char token[4]) {
+    for (int i = 0; i < 18; i++) {
+        if (strcmp(token, non_memory_instructions[i].symbol) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int is_non_memory_instruction(const char token [4]) {
+    return get_memory_instruction_index(token) != -1;
+}
+// endregion
+
 void first_pass(FILE* input) {
     char line[LINE_LENGTH];
     int line_counter = 0;
