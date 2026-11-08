@@ -4,12 +4,12 @@
 
 #include <ctype.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include "symbol_table.h"
 
 // region prototypes
-void add_label(char* label, int lc);
-int is_label(const char token[5]);
+int is_valid_label(const char token[5]);
 // endregion
 
 typedef struct {
@@ -109,6 +109,73 @@ int is_non_memory_instruction(const char token [4]) {
 }
 // endregion
 
+// region label
+typedef struct label {
+    char symbol[4];
+    uint16_t address;
+    struct label * next;
+} label;
+
+label * label_list = NULL;
+
+label * get_label(const char token[4]) {
+    label * l = label_list;
+    while (l != NULL) {
+        if (strcmp(token, l->symbol) == 0) {
+            return l;
+        }
+        l = l->next;
+    }
+    return NULL;
+}
+
+int is_label(const char token[4]) {
+    return get_label(token) != NULL;
+}
+
+/**
+ * adds the label with its address to the symbol table
+ * @param symbol The label's symbol, at most 3 characters plus a null terminator
+ * @param address The labels memory address
+ * @return 0 on success, 1 on duplicate symbol and 2 on memory alloation faliure
+ */
+int add_label(const char symbol[4], uint16_t address) {
+    // check for duplicates
+    if (get_label(symbol) != NULL) {
+        return 1;
+    }
+
+    label *new_label = malloc(sizeof(label));
+    if (new_label == NULL) {
+        return 2;
+    }
+    strcpy(new_label->symbol, symbol);
+    new_label->address = address;
+    new_label->next = NULL;
+
+    if (label_list == NULL) {
+        label_list = new_label;
+    }
+    else {
+        new_label->next = label_list;
+        label_list = new_label;
+    }
+    return 0;
+}
+
+void free_labels(void) {
+    label *current = label_list;
+
+    while (current != NULL) {
+        label *next = current->next;
+        free(current);
+        current = next;
+    }
+
+    label_list = NULL;
+}
+// endregion
+
 void first_pass(FILE* input) {
     char line[LINE_LENGTH];
     int line_counter = 0;
@@ -116,7 +183,7 @@ void first_pass(FILE* input) {
     while (fgets(line, LINE_LENGTH, input) != NULL) {
 
         char label[] = {line[0], line[1], line[2], line[3], '\0'};
-        if (is_label(label)) {
+        if (is_valid_label(label)) {
             label[4] = '\0';
             add_label(label, line_counter);
             line_counter++;
@@ -142,11 +209,7 @@ void first_pass(FILE* input) {
     }
 }
 
-void add_label(char* label, int lc) {
-    // TODO: implement symbol label
-}
-
-int is_label(const char token[5]) {
+int is_valid_label(const char token[5]) {
     if (!isalpha(token[0]))
         return 0;
 
