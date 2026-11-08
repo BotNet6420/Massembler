@@ -3,6 +3,7 @@
 //
 
 #include <ctype.h>
+#include <stdint.h>
 #include <string.h>
 #include "symbol_table.h"
 
@@ -10,6 +11,11 @@
 void add_label(char* label, int lc);
 int is_label(const char token[5]);
 // endregion
+
+typedef struct {
+    const char* symbol;
+    uint16_t binary_code;
+} instruction;
 
 // region pseudoinstruction
 const char *pseudoinstruction_table[] = {
@@ -39,6 +45,31 @@ enum pseudoinstruction get_pseudoinstruction(const char token[4]) {
 
 int is_pseudoinstruction(const char token[4]) {
     return get_pseudoinstruction(token) != INVALID_pseudoinstruction;
+}
+// endregion
+
+// region MRI
+const instruction memory_instruction[] = {
+    {.symbol = "AND", .binary_code = 0x0000},
+    {.symbol = "ADD", .binary_code = 0x1000},
+    {.symbol = "LDA", .binary_code = 0x2000},
+    {.symbol = "STA", .binary_code = 0x3000},
+    {.symbol = "BUN", .binary_code = 0x4000},
+    {.symbol = "BSA", .binary_code = 0x5000},
+    {.symbol = "ISZ", .binary_code = 0x6000}
+};
+
+int get_memory_instruction_index(const char token[4]) {
+    for (int i = 0; i < 7; i++) {
+        if (strcmp(token, memory_instruction[i].symbol) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int is_memory_instruction(const char token[4]) {
+    return get_memory_instruction_index(token) != -1;
 }
 // endregion
 
