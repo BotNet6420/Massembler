@@ -356,3 +356,11 @@ int is_valid_label(char* token) {
 
     return !is_reserved(token);
 }
+
+void dump_labels() {
+    label *current = label_list;
+    while (current != NULL) {
+        printf("%3s - %X\n", current->symbol, current->address);
+        current = current->next;
+    }
+}

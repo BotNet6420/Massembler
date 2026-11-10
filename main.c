@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "symbol_table.h"
 
 int main(void) {
     printf("Hello, World!\n");
@@ -12,6 +13,7 @@ int main(void) {
     }
     first_pass(file);
     fclose(file);
+    dump_labels();
     return 0;
 }
 
