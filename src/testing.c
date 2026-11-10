@@ -1,12 +1,16 @@
+//
+// Created by botnet64 on 11/10/26.
+//
+
 #include <ctype.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include "symbol_table.h"
+#include <core/assembler.h>
+#include <core/symbol_table.h>
 
 int main(void) {
     printf("Hello, World!\n");
-    FILE* file = fopen("/home/botnet64/Documents/projects/mano-basic-computer/assembler/test.txt", "r");
+    FILE *file = fopen("/home/botnet64/Documents/projects/mano-basic-computer/assembler/test.txt", "r");
     if (file == NULL) {
         printf("Error opening file\n");
         return 1;
@@ -16,4 +20,3 @@ int main(void) {
     dump_labels();
     return 0;
 }
-
