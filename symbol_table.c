@@ -206,10 +206,16 @@ int first_pass(FILE* input) {
         }
 
         // check for first column being a label
-        if (is_valid_label(part1)) {
+        if (part1[strlen(part1) - 1] == ',') {
             // address overflow
             if (line_counter > 0xfff) {
                 // TODO: ERROR(address overflow; program too large)
+                return 1;
+            }
+
+            // invalid label format
+            if (!is_valid_label(part1)) {
+                // TODO: ERROR(invalid label)
                 return 1;
             }
 
