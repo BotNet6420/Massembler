@@ -221,6 +221,22 @@ int is_label(const char *token) {
 }
 
 /**
+ * Returns the binary address of the given label
+ * @param token Input token
+ * @param address The binary address of the token if the label exists in the symbol table
+ * @return 1 if the label exists in the symbol table, 0 if it does not
+ */
+int get_label_address(const char *token, uint16_t *address) {
+    label * symbol = get_label(token);
+    if (symbol == NULL) {
+        return 0;
+    }
+
+    *address = symbol->address;
+    return 1;
+}
+
+/**
  * Adds the label with its address to the symbol table
  * @param symbol The label's symbol, must be a valid label
  * @param address The labels memory address
