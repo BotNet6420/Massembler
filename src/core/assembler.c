@@ -141,7 +141,7 @@ int first_pass(FILE *input) {
 }
 
 int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
-    char copy[LINE_LENGTH];
+    char buffer[LINE_LENGTH];
 
     if (instruction == NULL) {
         // TODO: FATAL(NULL pointer dereference (MRI instruction))
@@ -152,7 +152,18 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
         return 1;
     }
 
-    strcpy(copy, instruction);
+    strcpy(buffer, instruction);
+    // advance line pointer to start of opcode
+    char *copy = strchr(buffer, ',');
+    if (copy == NULL) {
+        copy = buffer;
+    }
+    else {
+        copy += 1;
+    }
+    while (isspace((unsigned char)*copy)) {
+        copy++;
+    }
 
     const char *opcode = strtok(copy, " \t\r\n");
     const char *address = strtok(NULL, " \t\r\n");
@@ -214,7 +225,7 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
 }
 
 int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
-    char copy[LINE_LENGTH];
+    char buffer[LINE_LENGTH];
 
     if (instruction == NULL) {
         // TODO: FATAL(NULL pointer dereference (non-MRI instruction))
@@ -225,7 +236,18 @@ int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell
         return 1;
     }
 
-    strcpy(copy, instruction);
+    strcpy(buffer, instruction);
+    // advance line pointer to start of opcode
+    char *copy = strchr(buffer, ',');
+    if (copy == NULL) {
+        copy = buffer;
+    }
+    else {
+        copy += 1;
+    }
+    while (isspace((unsigned char)*copy)) {
+        copy++;
+    }
 
     const char *opcode = strtok(copy, " \t\r\n");
     const char *token2 = strtok(NULL, " \t\r\n"); // Must be NULL
@@ -301,12 +323,6 @@ int second_pass(FILE *input) {
             if (strcmp(token, "END") == 0) {
                 // TODO: Error(END cannot have label)
                 return 1;
-            }
-
-            // advance line pointer to start of opcode
-            instruction = strchr(line, ',') + 1;
-            while (isspace((unsigned char)*instruction)) {
-                instruction++;
             }
         }
 
