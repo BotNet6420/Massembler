@@ -16,7 +16,10 @@ int main(void) {
         return 1;
     }
     first_pass(file);
-    fclose(file);
     dump_labels();
+    rewind(file);
+    second_pass(file);
+    fclose(file);
+
     return 0;
 }
