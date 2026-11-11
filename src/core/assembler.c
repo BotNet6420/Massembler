@@ -99,7 +99,7 @@ int first_pass(FILE *input) {
 
             // catch syntax errors (trailing non-whitespace character)
             char dummy;
-            if (sscanf(part2, " %x %c", &number, &dummy) != 1 ){
+            if (sscanf(part2, " %x %c", &number, &dummy) != 1) {
                 // TODO: ERROR(invalid address)
                 return 1;
             }
@@ -140,11 +140,6 @@ int first_pass(FILE *input) {
     return 1;
 }
 
-void error(char *text, int file_line) {
-    printf(text);
-    printf(" - %d\n", file_line);
-}
-
 int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     char copy[LINE_LENGTH];
 
@@ -171,19 +166,16 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     // Opcode translation
     if (opcode == NULL) {
         // TODO: ERROR(missing MRI)
-        error("no mri code", file_line);
         return 1;
     }
 
     if (!is_memory_instruction(opcode)) {
         // TODO: ERROR(invalid MRI)
-        error("invalid MRI", file_line);
         return 1;
     }
 
     if (get_memory_instruction_code(opcode, &opcode_binary_code) != 1) {
         // TODO: ERROR(instruction not found)
-        error("mri not found", file_line);
         return 1;
     }
 
@@ -191,13 +183,11 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     // Address translation
     if (address == NULL) {
         // TODO: ERROR(missing address)
-        error("mri missing address", file_line);
         return 1;
     }
 
     if (get_label_address(address, &address_binary_code) != 1) {
         // TODO: ERROR(invalid label)
-        error("mri label invalid", file_line);
         return 1;
     }
 
@@ -206,10 +196,8 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     if (indirection != NULL) {
         if (strcmp(indirection, "I") == 0) {
             indirection_binary_code = 0x8000;
-        }
-        else {
+        } else {
             // TODO: ERROR(invalid token, expected I)
-            error("mri expected I here", file_line);
             return 1;
         }
     }
@@ -217,7 +205,6 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
 
     if (token4 != NULL) {
         // TODO: ERROR(invalid token)
-        error("extra mri token", file_line);
         return 1;
     }
 
@@ -248,26 +235,22 @@ int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell
     // Opcode translation
     if (opcode == NULL) {
         // TODO: ERROR(missing non-MRI)
-        error("no non-mri code", file_line);
         return 1;
     }
 
     if (!is_non_memory_instruction(opcode)) {
         // TODO: ERROR(invalid non-MRI)
-        error("invalid non-mri", file_line);
         return 1;
     }
 
     if (get_non_memory_instruction_code(opcode, &opcode_binary_code) != 1) {
         // TODO: ERROR(instruction not found)
-        error("non-mri not found", file_line);
         return 1;
     }
 
 
     if (token2 != NULL) {
         // TODO: ERROR(invalid token)
-        error("extra non-mri token", file_line);
         return 1;
     }
 
@@ -287,7 +270,6 @@ int second_pass(FILE *input) {
 
         if (strchr(line, '\n') == NULL && feof(input) == 0) {
             // TODO: ERROR(line too long; cannot parse)
-            error("line too long", file_line);
             return 1;
         }
 
@@ -308,19 +290,16 @@ int second_pass(FILE *input) {
             // Cannot have empty label line
             if (token == NULL) {
                 // TODO: ERROR(missing instruction)
-                error("missing instruction after label", file_line);
                 return 1;
             }
 
             // ORG and END cannot have labels
             if (strcmp(token, "ORG") == 0) {
                 // TODO: Error(ORG cannot have label)
-                error("label + org", file_line);
                 return 1;
             }
             if (strcmp(token, "END") == 0) {
                 // TODO: Error(END cannot have label)
-                error("label + end", file_line);
                 return 1;
             }
 
@@ -336,7 +315,6 @@ int second_pass(FILE *input) {
             // address overflow
             if (line_counter > 0xfff) {
                 // TODO: ERROR(address overflow; program too large)
-                error("address overflow", file_line);
                 return 1;
             }
 
@@ -355,7 +333,6 @@ int second_pass(FILE *input) {
             // address overflow
             if (line_counter > 0xfff) {
                 // TODO: ERROR(address overflow; program too large)
-                error("address overflow", file_line);
                 return 1;
             }
 
@@ -380,7 +357,6 @@ int second_pass(FILE *input) {
                     // check address exists
                     if (token2 == NULL) {
                         // TODO: ERROR(ORG missing operand)
-                        error("org missing operand", file_line);
                         return 1;
                     }
 
@@ -388,7 +364,6 @@ int second_pass(FILE *input) {
                     unsigned int number = 0;
                     if (sscanf(token2, " %x", &number) != 1) {
                         // TODO: ERROR(no address found)
-                        error("no address found org", file_line);
                         return 1;
                     }
 
@@ -396,21 +371,18 @@ int second_pass(FILE *input) {
                     char dummy;
                     if (sscanf(token2, " %x %c", &number, &dummy) != 1) {
                         // TODO: ERROR(invalid address)
-                        error("invalid adders org", file_line);
                         return 1;
                     }
 
                     // catch invalid extra token
                     if (token3 != NULL) {
                         // TODO: ERROR(invalid token)
-                        error("extra token after org", file_line);
                         return 1;
                     }
 
                     // address out of bounds
                     if (number > 0xfff) {
                         // TODO: ERROR(address too large)
-                    error("address overflow", file_line);
                         return 1;
                     }
                     line_counter = (uint16_t) number;
@@ -420,11 +392,10 @@ int second_pass(FILE *input) {
                 case END: {
                     if (token2 != NULL) {
                         // TODO: ERROR(unexpected operand after END)
-                        error("extra token after end", file_line);
                         return 1;
                     }
 
-                    FILE* a =fopen("a.txt", "w");
+                    FILE *a = fopen("a.txt", "w");
                     for (int i = 0; i < line_counter; i++) {
                         fprintf(a, "%4d (%3x): %x\n", i, i, output_buffer[i]);
                     }
@@ -447,14 +418,12 @@ int second_pass(FILE *input) {
             // address overflow
             if (line_counter > 0xfff) {
                 // TODO: ERROR(address overflow; program too large)
-                error("address overflow", file_line);
                 return 1;
             }
             switch (get_pseudoinstruction(token)) {
                 case DEC: {
                     if (token2 == NULL) {
                         // TODO: ERROR(missing operand)
-                        error("dec missing operand", file_line);
                         return 1;
                     }
 
@@ -462,7 +431,6 @@ int second_pass(FILE *input) {
                     int number = 0;
                     if (sscanf(token2, " %d", &number) != 1) {
                         // TODO: ERROR(no number found)
-                        error("no dec number found", file_line);
                         return 1;
                     }
 
@@ -470,26 +438,22 @@ int second_pass(FILE *input) {
                     char dummy;
                     if (sscanf(token2, " %d %c", &number, &dummy) != 1) {
                         // TODO: ERROR(invalid address)
-                        error("invalid decimal number", file_line);
                         return 1;
                     }
 
                     // catch invalid extra token
                     if (token3 != NULL) {
                         // TODO: ERROR(invalid token)
-                        error("invalid token after dec", file_line);
                         return 1;
                     }
 
                     if (number > INT16_MAX) {
                         // TODO: ERROR(literal too big)
-                        error("dec number too big", file_line);
                         return 1;
                     }
 
                     if (number < INT16_MIN) {
                         // TODO: ERROR(literal too small)
-                        error("dec number too small", file_line);
                         return 1;
                     }
 
@@ -501,7 +465,6 @@ int second_pass(FILE *input) {
                 case HEX: {
                     if (token2 == NULL) {
                         // TODO: ERROR(missing operand)
-                        error("hex missing operand", file_line);
                         return 1;
                     }
 
@@ -509,7 +472,6 @@ int second_pass(FILE *input) {
                     unsigned int number = 0;
                     if (sscanf(token2, " %x", &number) != 1) {
                         // TODO: ERROR(no number found)
-                        error("no hex number found", file_line);
                         return 1;
                     }
 
@@ -517,20 +479,17 @@ int second_pass(FILE *input) {
                     char dummy;
                     if (sscanf(token2, " %x %c", &number, &dummy) != 1) {
                         // TODO: ERROR(invalid hex)
-                        error("invalid hexadecimal number", file_line);
                         return 1;
                     }
 
                     // catch invalid extra token
                     if (token3 != NULL) {
                         // TODO: ERROR(invalid token)
-                        error("invalid token after hex", file_line);
                         return 1;
                     }
 
                     if (number > UINT16_MAX) {
                         // TODO: ERROR(literal too big)
-                        error("hex literal too big", file_line);
                         return 1;
                     }
 
@@ -541,7 +500,6 @@ int second_pass(FILE *input) {
 
                 case INVALID_pseudoinstruction: {
                     // TODO: ERROR(invalid instruction)
-                    error("invalid pseudoinstruction", file_line);
                     return 1;
                 }
 
@@ -553,10 +511,8 @@ int second_pass(FILE *input) {
         }
 
         // TODO: ERROR(invalid instruction)
-        error("invalid instruction", file_line);
         return 1;
     }
     // TODO: ERROR(EOF without END instruction)
-    error("no END but eof", file_line);
     return 1;
 }
