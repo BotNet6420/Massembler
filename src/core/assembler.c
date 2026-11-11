@@ -8,6 +8,8 @@
 #include <string.h>
 #include <core/symbol_table.h>
 
+#include "logger.h"
+
 
 /**
  * Perform the first assembler pass on the source code to generate
@@ -19,14 +21,26 @@ int first_pass(FILE *input) {
     char line[LINE_LENGTH];
     uint16_t line_counter = 0;
     int file_line = 0; // to be used by error messages to report the problematic line
+    caller_details caller = {
+        .section_name = "assembler",
+        .subsection_name = "first_pass",
+    };
+
+    error_details error = {};
 
     while (fgets(line, LINE_LENGTH, input) != NULL) {
         file_line++;
         if (strchr(line, '\n') == NULL && feof(input) == 0) {
-            // TODO: ERROR(line too long; cannot parse)
+            caller.line_number = __LINE__ - 1;
+            error.line_number = file_line;
+            error.message = "Source line too long; cannot parse";
+            error.text = NULL;
+            log_stderr(caller, error, ERROR);
             return 1;
         }
 
+        error.line_number = file_line;
+        error.text = line;
         char copy[LINE_LENGTH];
         strcpy(copy, line);
 
@@ -42,40 +56,63 @@ int first_pass(FILE *input) {
         if (part1[strlen(part1) - 1] == ',') {
             // address overflow
             if (line_counter > 0xfff) {
-                // TODO: ERROR(address overflow; program too large)
+                caller.line_number = __LINE__ - 1;
+                char m[128] = "Instruction address too big";
+                char n[128];
+                sprintf(n, " (%04x)", line_counter);
+                strcat(m, n);
+                error.message = m;
+                error.character_number = 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
 
             // invalid label format
             if (!is_valid_label(part1)) {
-                // TODO: ERROR(invalid label)
+                caller.line_number = __LINE__ - 1;
+                error.message = "Invalid label format";
+                error.character_number = strstr(line, part1) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
 
             // catch label on empty line
             if (part2 == NULL) {
-                // TODO: ERROR(missing instruction)
+                caller.line_number = __LINE__ - 1;
+                error.message = "Labeled line missing instruction";
+                error.character_number = strstr(line, part1) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
 
             // ORG and END cannot have labels
             if (strcmp(part2, "ORG") == 0) {
-                // TODO: Error(ORG cannot have label)
+                caller.line_number = __LINE__ - 1;
+                error.message = "ORG instruction cannot have a label";
+                error.character_number = strstr(line, part1) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
             if (strcmp(part2, "END") == 0) {
-                // TODO: Error(END cannot have label)
+                caller.line_number = __LINE__ - 1;
+                error.message = "END instruction cannot have a label";
+                error.character_number = strstr(line, part1) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
 
             // try to add the label
             int result = add_label(part1, line_counter);
             if (result == 1) {
-                // TODO: ERROR(duplicate symbol)
+                caller.line_number = __LINE__ - 1;
+                error.message = "Duplicated label";
+                error.character_number = strstr(line, part1) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
             if (result == 2) {
-                // TODO: ERROR(out-of-memory)
+                caller.line_number = __LINE__ - 1;
+                error.message = "Out of memory";
                 return 1;
             }
             line_counter++;
@@ -86,33 +123,50 @@ int first_pass(FILE *input) {
         if (strcmp(part1, "ORG") == 0) {
             // check address exists
             if (part2 == NULL) {
-                // TODO: ERROR(ORG missing operand)
+                caller.line_number = __LINE__ - 1;
+                error.message = "ORG instruction missing address operand";
+                error.character_number = strstr(line, part1) - line + 5;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
 
             // try parse the number
             unsigned int number = 0;
             if (sscanf(part2, " %x", &number) != 1) {
-                // TODO: ERROR(no address found)
+                caller.line_number = __LINE__ - 1;
+                error.message = "Could not parse HEX address";
+                error.character_number = strstr(line, part2) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
 
             // catch syntax errors (trailing non-whitespace character)
             char dummy;
-            if (sscanf(part2, " %x %c", &number, &dummy) != 1) {
-                // TODO: ERROR(invalid address)
+            int n = 0;
+            if (sscanf(part2, " %x %n%c", &number, &n, &dummy) != 1) {
+                caller.line_number = __LINE__ - 1;
+                error.message = "Could not parse HEX address";
+                error.character_number = strstr(line, part2) - line + n + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
 
             // catch invalid extra token
-            if (strtok(NULL, " \t\r\n") != NULL) {
-                // TODO: ERROR(invalid token)
+            char *part3 = strtok(NULL, " \t\r\n");
+            if (part3 != NULL) {
+                caller.line_number = __LINE__ - 1;
+                error.message = "Expected newline";
+                error.character_number = strstr(line, part3) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
 
             // address out of bounds
             if (number > 0xfff) {
-                // TODO: ERROR(address too large)
+                caller.line_number = __LINE__ - 1;
+                error.message = "ORG address too big";
+                error.character_number = strstr(line, part2) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
             line_counter = (uint16_t) number;
@@ -122,7 +176,10 @@ int first_pass(FILE *input) {
         // exit first pass
         if (strcmp(part1, "END") == 0) {
             if (part2 != NULL) {
-                // TODO: ERROR(unexpected operand after END)
+                caller.line_number = __LINE__ - 1;
+                error.message = "Expected newline";
+                error.character_number = strstr(line, part2) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
 
@@ -131,24 +188,48 @@ int first_pass(FILE *input) {
 
         // address overflow
         if (line_counter > 0xfff) {
-            // TODO: ERROR(address overflow; program too large)
+            caller.line_number = __LINE__ - 1;
+            char m[128] = "Instruction address too big";
+            char n[128];
+            sprintf(n, " (%04x)", line_counter);
+            strcat(m, n);
+            error.message = m;
+            error.character_number = strstr(line, part1) - line + 1;
+            log_stderr(caller, error, ERROR);
             return 1;
         }
         line_counter++;
     }
-    // TODO: ERROR(EOF without END instruction)
+    caller.line_number = __LINE__ - 1;
+    error.message = "Reached EOF but no END instruction";
+    error.line_number = file_line;
+    error.character_number = strlen(line);
+    log_stderr(caller, error, ERROR);
     return 1;
 }
 
 int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
+    caller_details caller = {
+        .section_name = "assembler",
+        .subsection_name = "translate_MRI"
+    };
+    error_details error = {
+        .text = instruction,
+        .line_number = file_line,
+    };
+
     char buffer[LINE_LENGTH];
 
     if (instruction == NULL) {
-        // TODO: FATAL(NULL pointer dereference (MRI instruction))
+        caller.line_number = __LINE__ - 1;
+        error.message = "No instruction line; This should not happen";
+        log_stderr(caller, error, FATAL);
         return 1;
     }
     if (mem_cell == NULL) {
-        // TODO: FATAL(NULL pointer dereference (MRI mem_cell))
+        caller.line_number = __LINE__ - 1;
+        error.message = "No memory cell; This should not happen";
+        log_stderr(caller, error, FATAL);
         return 1;
     }
 
@@ -176,29 +257,43 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
 
     // Opcode translation
     if (opcode == NULL) {
-        // TODO: ERROR(missing MRI)
+        caller.line_number = __LINE__ - 1;
+        error.message = "No instruction in instruction line; This should not happen";
+        log_stderr(caller, error, ERROR);
         return 1;
     }
 
     if (!is_memory_instruction(opcode)) {
-        // TODO: ERROR(invalid MRI)
+        caller.line_number = __LINE__ - 1;
+        error.message = "Invalid MRI";
+        error.character_number = strstr(instruction, opcode) - instruction + 1;
+        log_stderr(caller, error, ERROR);
         return 1;
     }
 
     if (get_memory_instruction_code(opcode, &opcode_binary_code) != 1) {
-        // TODO: ERROR(instruction not found)
+        caller.line_number = __LINE__ - 1;
+        error.message = "MRI not found in symbol table";
+        error.character_number = strstr(instruction, opcode) - instruction + 1;
+        log_stderr(caller, error, ERROR);
         return 1;
     }
 
 
     // Address translation
     if (address == NULL) {
-        // TODO: ERROR(missing address)
+        caller.line_number = __LINE__ - 1;
+        error.message = "MRI missing address";
+        error.character_number = strstr(instruction, opcode) - instruction + strlen(opcode) + 2;
+        log_stderr(caller, error, ERROR);
         return 1;
     }
 
     if (get_label_address(address, &address_binary_code) != 1) {
-        // TODO: ERROR(invalid label)
+        caller.line_number = __LINE__ - 1;
+        error.message = "Undefined label";
+        error.character_number = strstr(instruction, address) - instruction + 1;
+        log_stderr(caller, error, ERROR);
         return 1;
     }
 
@@ -208,14 +303,20 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
         if (strcmp(indirection, "I") == 0) {
             indirection_binary_code = 0x8000;
         } else {
-            // TODO: ERROR(invalid token, expected I)
+            caller.line_number = __LINE__ - 1;
+            error.message = "Expected I or newline";
+            error.character_number = strstr(instruction, indirection) - instruction + 1;
+            log_stderr(caller, error, ERROR);
             return 1;
         }
     }
 
 
     if (token4 != NULL) {
-        // TODO: ERROR(invalid token)
+        caller.line_number = __LINE__ - 1;
+        error.message = "Expected newline";
+        error.character_number = strstr(instruction, token4) - instruction + 1;
+        log_stderr(caller, error, ERROR);
         return 1;
     }
 
@@ -225,14 +326,27 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
 }
 
 int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
+    caller_details caller = {
+        .section_name = "assembler",
+        .subsection_name = "translate_non_MRI"
+    };
+    error_details error = {
+        .text = instruction,
+        .line_number = file_line,
+    };
+
     char buffer[LINE_LENGTH];
 
     if (instruction == NULL) {
-        // TODO: FATAL(NULL pointer dereference (non-MRI instruction))
+        caller.line_number = __LINE__ - 1;
+        error.message = "No instruction line; This should not happen";
+        log_stderr(caller, error, FATAL);
         return 1;
     }
     if (mem_cell == NULL) {
-        // TODO: FATAL(NULL pointer dereference (non-MRI mem_cell))
+        caller.line_number = __LINE__ - 1;
+        error.message = "No memory cell; This should not happen";
+        log_stderr(caller, error, FATAL);
         return 1;
     }
 
@@ -256,23 +370,34 @@ int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell
 
     // Opcode translation
     if (opcode == NULL) {
-        // TODO: ERROR(missing non-MRI)
+        caller.line_number = __LINE__ - 1;
+        error.message = "No instruction in instruction line; This should not happen";
+        log_stderr(caller, error, ERROR);
         return 1;
     }
 
     if (!is_non_memory_instruction(opcode)) {
-        // TODO: ERROR(invalid non-MRI)
+        caller.line_number = __LINE__ - 1;
+        error.message = "Invalid non-MRI";
+        error.character_number = strstr(instruction, opcode) - instruction + 1;
+        log_stderr(caller, error, ERROR);
         return 1;
     }
 
     if (get_non_memory_instruction_code(opcode, &opcode_binary_code) != 1) {
-        // TODO: ERROR(instruction not found)
+        caller.line_number = __LINE__ - 1;
+        error.message = "non-MRI not found in symbol table";
+        error.character_number = strstr(instruction, opcode) - instruction + 1;
+        log_stderr(caller, error, ERROR);
         return 1;
     }
 
 
     if (token2 != NULL) {
-        // TODO: ERROR(invalid token)
+        caller.line_number = __LINE__ - 1;
+        error.message = "Expected newline";
+        error.character_number = strstr(instruction, token2) - instruction + 1;
+        log_stderr(caller, error, ERROR);
         return 1;
     }
 
@@ -281,6 +406,13 @@ int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell
 }
 
 int second_pass(FILE *input) {
+    caller_details caller = {
+        .section_name = "assembler",
+        .subsection_name = "second_pass",
+    };
+
+    error_details error = {};
+
     char line[LINE_LENGTH];
     uint16_t output_buffer[4096] = {0};
 
@@ -289,15 +421,19 @@ int second_pass(FILE *input) {
 
     while (fgets(line, LINE_LENGTH, input) != NULL) {
         file_line++;
+        error.line_number = file_line;
 
         if (strchr(line, '\n') == NULL && feof(input) == 0) {
-            // TODO: ERROR(line too long; cannot parse)
+            caller.line_number = __LINE__ - 1;
+            error.message = "Source line too long; cannot parse";
+            log_stderr(caller, error, ERROR);
             return 1;
         }
 
         char copy[LINE_LENGTH];
         strcpy(copy, line);
         const char *instruction = line;
+        error.text = line;
 
         char *token = strtok(copy, " \t\r\n");
 
@@ -307,21 +443,31 @@ int second_pass(FILE *input) {
 
         // skip label token
         if (token[strlen(token) - 1] == ',') {
+            char *label = token;
             token = strtok(NULL, " \t\r\n");
 
             // Cannot have empty label line
             if (token == NULL) {
-                // TODO: ERROR(missing instruction)
+                caller.line_number = __LINE__ - 1;
+                error.message = "Labeled line missing instruction";
+                error.character_number = strstr(line, label) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
 
             // ORG and END cannot have labels
             if (strcmp(token, "ORG") == 0) {
-                // TODO: Error(ORG cannot have label)
+                caller.line_number = __LINE__ - 1;
+                error.message = "ORG instruction cannot have a label";
+                error.character_number = strstr(line, label) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
             if (strcmp(token, "END") == 0) {
-                // TODO: Error(END cannot have label)
+                caller.line_number = __LINE__ - 1;
+                error.message = "END instruction cannot have a label";
+                error.character_number = strstr(line, label) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
         }
@@ -330,7 +476,14 @@ int second_pass(FILE *input) {
         if (is_memory_instruction(token)) {
             // address overflow
             if (line_counter > 0xfff) {
-                // TODO: ERROR(address overflow; program too large)
+                caller.line_number = __LINE__ - 1;
+                char m[128] = "Instruction address too big";
+                char n[128];
+                sprintf(n, " (%04x)", line_counter);
+                strcat(m, n);
+                error.message = m;
+                error.character_number = strstr(line, token) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
 
@@ -348,7 +501,14 @@ int second_pass(FILE *input) {
         if (is_non_memory_instruction(token)) {
             // address overflow
             if (line_counter > 0xfff) {
-                // TODO: ERROR(address overflow; program too large)
+                caller.line_number = __LINE__ - 1;
+                char m[128] = "Instruction address too big";
+                char n[128];
+                sprintf(n, " (%04x)", line_counter);
+                strcat(m, n);
+                error.message = m;
+                error.character_number = strstr(line, token) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
 
@@ -372,33 +532,49 @@ int second_pass(FILE *input) {
                 case ORG: {
                     // check address exists
                     if (token2 == NULL) {
-                        // TODO: ERROR(ORG missing operand)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "ORG instruction missing address operand";
+                        error.character_number = strstr(line, token) - line + 5;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     // try parse the number
                     unsigned int number = 0;
                     if (sscanf(token2, " %x", &number) != 1) {
-                        // TODO: ERROR(no address found)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "Could not parse HEX address";
+                        error.character_number = strstr(line, token2) - line + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     // catch syntax errors (trailing non-whitespace character)
                     char dummy;
-                    if (sscanf(token2, " %x %c", &number, &dummy) != 1) {
-                        // TODO: ERROR(invalid address)
+                    int n = 0;
+                    if (sscanf(token2, " %x %n%c", &number, &n, &dummy) != 1) {
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "Could not parse HEX address";
+                        error.character_number = strstr(line, token2) - line + n + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     // catch invalid extra token
                     if (token3 != NULL) {
-                        // TODO: ERROR(invalid token)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "Expected newline";
+                        error.character_number = strstr(line, token3) - line + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     // address out of bounds
                     if (number > 0xfff) {
-                        // TODO: ERROR(address too large)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "ORG address too big";
+                        error.character_number = strstr(line, token2) - line + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
                     line_counter = (uint16_t) number;
@@ -407,7 +583,10 @@ int second_pass(FILE *input) {
 
                 case END: {
                     if (token2 != NULL) {
-                        // TODO: ERROR(unexpected operand after END)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "Expected newline";
+                        error.character_number = strstr(line, token2) - line + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
@@ -427,43 +606,69 @@ int second_pass(FILE *input) {
 
             // address overflow
             if (line_counter > 0xfff) {
-                // TODO: ERROR(address overflow; program too large)
+                caller.line_number = __LINE__ - 1;
+                char m[128] = "Instruction address too big";
+                char n[128];
+                sprintf(n, " (%04x)", line_counter);
+                strcat(m, n);
+                error.message = m;
+                error.character_number = strstr(line, token) - line + 1;
+                log_stderr(caller, error, ERROR);
                 return 1;
             }
             switch (get_pseudoinstruction(token)) {
                 case DEC: {
                     if (token2 == NULL) {
-                        // TODO: ERROR(missing operand)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "DEC instruction missing operand";
+                        error.character_number = strstr(line, token) - line + 5;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     // try parse the number
                     int number = 0;
                     if (sscanf(token2, " %d", &number) != 1) {
-                        // TODO: ERROR(no number found)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "Could not parse decimal number";
+                        error.character_number = strstr(line, token2) - line + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     // catch syntax errors (trailing non-whitespace character)
                     char dummy;
-                    if (sscanf(token2, " %d %c", &number, &dummy) != 1) {
-                        // TODO: ERROR(invalid address)
+                    int n = 0;
+                    if (sscanf(token2, " %d %n%c", &number, &n, &dummy) != 1) {
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "Could not parse decimal number";
+                        error.character_number = strstr(line, token2) - line + n + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     // catch invalid extra token
                     if (token3 != NULL) {
-                        // TODO: ERROR(invalid token)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "Expected newline";
+                        error.character_number = strstr(line, token3) - line + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     if (number > INT16_MAX) {
-                        // TODO: ERROR(literal too big)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "decimal number too big";
+                        error.character_number = strstr(line, token2) - line + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     if (number < INT16_MIN) {
-                        // TODO: ERROR(literal too small)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "decimal number too small";
+                        error.character_number = strstr(line, token2) - line + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
@@ -474,32 +679,48 @@ int second_pass(FILE *input) {
 
                 case HEX: {
                     if (token2 == NULL) {
-                        // TODO: ERROR(missing operand)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "HEX instruction missing operand";
+                        error.character_number = strstr(line, token) - line + 5;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     // try parse the number
                     unsigned int number = 0;
                     if (sscanf(token2, " %x", &number) != 1) {
-                        // TODO: ERROR(no number found)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "Could not parse hexadecimal number";
+                        error.character_number = strstr(line, token2) - line + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     // catch syntax errors (trailing non-whitespace character)
                     char dummy;
-                    if (sscanf(token2, " %x %c", &number, &dummy) != 1) {
-                        // TODO: ERROR(invalid hex)
+                    int n = 0;
+                    if (sscanf(token2, " %x %n%c", &number, &n, &dummy) != 1) {
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "Could not parse hexadecimal number";
+                        error.character_number = strstr(line, token2) - line + n + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     // catch invalid extra token
                     if (token3 != NULL) {
-                        // TODO: ERROR(invalid token)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "Expected newline";
+                        error.character_number = strstr(line, token3) - line + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
                     if (number > UINT16_MAX) {
-                        // TODO: ERROR(literal too big)
+                        caller.line_number = __LINE__ - 1;
+                        error.message = "hexadecimal number too big";
+                        error.character_number = strstr(line, token2) - line + 1;
+                        log_stderr(caller, error, ERROR);
                         return 1;
                     }
 
@@ -509,20 +730,31 @@ int second_pass(FILE *input) {
                 }
 
                 case INVALID_pseudoinstruction: {
-                    // TODO: ERROR(invalid instruction)
+                    caller.line_number = __LINE__ - 1;
+                    error.message = "Pseudo instruction missing - it should not reach here";
+                    log_stderr(caller, error, FATAL);
                     return 1;
                 }
 
                 default: {
-                    // TODO FATAL(should not have reached here)
+                    caller.line_number = __LINE__ - 1;
+                    error.message = "Pseudo instruction missing - it should not reach here";
+                    log_stderr(caller, error, FATAL);
                     return 1;
                 }
             }
         }
 
-        // TODO: ERROR(invalid instruction)
+        caller.line_number = __LINE__ - 1;
+        error.message = "Invalid instruction";
+        error.character_number = strstr(line, token) - line + 1;
+        log_stderr(caller, error, ERROR);
         return 1;
     }
-    // TODO: ERROR(EOF without END instruction)
+    caller.line_number = __LINE__ - 1;
+    error.message = "Reached EOF but no END instruction";
+    error.line_number = file_line;
+    error.character_number = strlen(line);
+    log_stderr(caller, error, ERROR);
     return 1;
 }
