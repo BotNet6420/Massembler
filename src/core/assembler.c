@@ -18,10 +18,10 @@
 int first_pass(FILE *input) {
     char line[LINE_LENGTH];
     uint16_t line_counter = 0;
-    uint16_t file_counter = 0; // to be used by error messages to report the problematic line
+    int file_line = 0; // to be used by error messages to report the problematic line
 
     while (fgets(line, LINE_LENGTH, input) != NULL) {
-        file_counter++;
+        file_line++;
         if (strchr(line, '\n') == NULL && feof(input) == 0) {
             // TODO: ERROR(line too long; cannot parse)
             return 1;
@@ -99,8 +99,14 @@ int first_pass(FILE *input) {
 
             // catch syntax errors (trailing non-whitespace character)
             char dummy;
-            if (sscanf(part2, " %x %c", &number, &dummy) != 1 || strtok(NULL, " \t\r\n") != NULL) {
+            if (sscanf(part2, " %x %c", &number, &dummy) != 1 ){
                 // TODO: ERROR(invalid address)
+                return 1;
+            }
+
+            // catch invalid extra token
+            if (strtok(NULL, " \t\r\n") != NULL) {
+                // TODO: ERROR(invalid token)
                 return 1;
             }
 
