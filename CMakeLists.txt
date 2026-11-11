@@ -7,6 +7,8 @@ set(CMAKE_C_STANDARD 99)
 add_library(assembler_core SHARED
         src/core/symbol_table.c
         src/core/assembler.c
+        src/core/logger.c
+        src/core/logger.h
 )
 
 target_include_directories(assembler_core
