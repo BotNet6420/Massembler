@@ -34,6 +34,8 @@ int get_non_memory_instruction_code(const char *token, uint16_t *code);
 
 int is_label(const char *token);
 
+int get_label_address(const char *token, uint16_t *address);
+
 int add_label(const char *symbol, uint16_t address);
 
 void free_labels(void);
