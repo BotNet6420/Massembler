@@ -154,7 +154,7 @@ int get_non_memory_instruction_index(const char *token) {
  * @return 1 if true, 0 if false
  */
 int is_non_memory_instruction(const char *token) {
-    return get_memory_instruction_index(token) != -1;
+    return get_non_memory_instruction_index(token) != -1;
 }
 
 /**
