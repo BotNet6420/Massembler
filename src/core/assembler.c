@@ -395,12 +395,6 @@ int second_pass(FILE *input) {
                         return 1;
                     }
 
-                    FILE *a = fopen("a.txt", "w");
-                    for (int i = 0; i < line_counter; i++) {
-                        fprintf(a, "%4d (%3x): %x\n", i, i, output_buffer[i]);
-                    }
-                    fclose(a);
-
                     // output code
                     FILE *output = fopen("a.out", "wb");
                     fwrite(output_buffer, sizeof(uint16_t), line_counter, output);
