@@ -17,6 +17,7 @@ typedef struct linked_char_list {
 } linked_char_list;
 
 void write_big_endian(uint16_t number, unsigned char *output);
+void free_linked_char_nodes(linked_char_list *head);
 
 /**
  * Perform the first assembler pass on the source code to generate
@@ -845,54 +846,110 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
  * @return Pointer to the generated code, NULL on errors. Memory must be freed by the caller
  */
 unsigned char *assemble(char input[], int *output_length) {
+    caller_details caller = {
+        .section_name = "assembler",
+        .subsection_name = "assemble"
+    };
+    error_details error = {};
+
+    if (output_length == NULL) {
+        caller.line_number = __LINE__ - 1;
+        error.message = "Argument output_length missing";
+        log_stderr(caller, error, FATAL);
+        return NULL;
+    }
+
     int line_count = 1;
     linked_char_list *linked_lines = NULL;
 
     char *start = input;
+    int did_last_step_fail = 0;
     for (int i = 0;; i++) {
         int end = input[i] == '\0' ? 1 : 0;
+
         if (input[i] == '\n' || input[i] == '\0') {
-            line_count = input[i] == '\0' ? line_count : line_count + 1;
+            line_count = input[i] == '\0' ? line_count : line_count + 1; // don't count string end
             input[i] = '\0';
+
             linked_char_list *new_line = malloc(sizeof(linked_char_list));
+            if (new_line == NULL) {
+                caller.line_number = __LINE__ - 2;
+                error.message = "Memory allocation failed";
+                log_stderr(caller, error, FATAL);
+                did_last_step_fail = 1;
+                break;
+            }
+
             new_line->vale = start;
             new_line->next = linked_lines;
             linked_lines = new_line;
             start = &input[i + 1];
         }
+
         if (end) {
             break;
         }
     }
 
+    if (did_last_step_fail) {
+        free_linked_char_nodes(linked_lines);
+        return NULL;
+    }
+
     // make an array
     char **lines = malloc(sizeof(char *) * (line_count));
+    if (lines == NULL) {
+        caller.line_number = __LINE__ - 2;
+        error.message = "Memory allocation failed";
+        log_stderr(caller, error, FATAL);
+        free_linked_char_nodes(linked_lines);
+        return NULL;
+    }
+
     for (int i = line_count - 1; linked_lines != NULL; i--) {
         lines[i] = linked_lines->vale;
         linked_char_list *next = linked_lines->next;
         free(linked_lines);
         linked_lines = next;
     }
+    // linked_lines is NUL now and all of them have been freed
 
     // Do work
-    int exit_code = 0;
     if (first_pass(line_count, lines) != 0) {
-        exit_code = 1;
+        did_last_step_fail = 1;
     }
-    uint16_t output_size = 0;
-    unsigned char *object = NULL;
-    if (exit_code == 0) {
-        object = second_pass(line_count, lines, &output_size);
+    if (did_last_step_fail) {
+        caller.line_number = __LINE__ - 4;
+        error.message = "Fist pass returned with non-zero exit code";
+        log_stderr(caller, error, ERROR);
+        free(lines);
+        free_labels();
+        return NULL;
     }
 
-    // free memory
+    uint16_t output_size = 0;
+    unsigned char *object = second_pass(line_count, lines, &output_size);
+    // no longer needed either way
     free(lines);
     free_labels();
 
-    if (object != NULL) {
-        *output_length = output_size;
+    if (object == NULL) {
+        caller.line_number = __LINE__ - 2;
+        error.message = "Second pass returned NULL";
+        log_stderr(caller, error, ERROR);
+        return NULL;
     }
+
+    *output_length = output_size;
     return object;
+}
+
+void free_linked_char_nodes(linked_char_list *head) {
+    while (head != NULL) {
+        linked_char_list *next = head->next;
+        free(head);
+        head = next;
+    }
 }
 
 /**
