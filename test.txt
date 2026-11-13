@@ -9,5 +9,5 @@ HLT
 MIN, DEC 83
 SUB, DEC -23
 DIF, HEX 0
-ORG 100 /test comment
+ORG 1 / should still output all bytes correctly
 END/edge case (will expect newline if not behaving correctly)

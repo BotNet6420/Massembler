@@ -474,9 +474,11 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
 
     const char *line;
     uint16_t line_counter = 0;
+    uint16_t max_written_mem_cell = 0;
     int file_line = 0;
 
     for (int i = 0; i < size; i++) {
+        max_written_mem_cell = line_counter > max_written_mem_cell ? line_counter : max_written_mem_cell;
         file_line++;
         if (input[i] == NULL) {
             caller.line_number = __LINE__ - 1;
@@ -674,7 +676,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                         return NULL;
                     }
 
-                    *output_size = line_counter * (sizeof(uint16_t) / sizeof(unsigned char));
+                    *output_size = max_written_mem_cell * sizeof(uint16_t);
                     return (unsigned char *) output_buffer;
                 }
 
