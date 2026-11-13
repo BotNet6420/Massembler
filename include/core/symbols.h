@@ -15,8 +15,6 @@ int is_label(const char *token);
 
 int is_valid_label(char *token);
 
-void dump_labels();
-
 int is_reserved(const char *token);
 
 #endif //ASSEMBLER_SYMBOLS_H

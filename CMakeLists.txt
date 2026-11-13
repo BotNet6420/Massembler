@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.25.1)
 project(massembler C)
 
 set(CMAKE_C_STANDARD 99)

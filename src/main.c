@@ -5,7 +5,7 @@
 #include <core/assemble.h>
 
 #define NAME "massembler"
-#define VERSION "0.1.0"
+#define VERSION "1.0.0"
 #define RETURN_CODE_SUCCESS 0
 #define RETURN_CODE_INVALID_USAGE 1
 #define RETURN_CODE_INVALID_ARGUMENT 2
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 
     // Generate binary
     int binary_length = -1;
-    unsigned char *binary = assemble(buffer,  &binary_length);
+    unsigned char *binary = assemble(buffer, &binary_length);
     free(buffer);
     if (binary == NULL || binary_length < 0) {
         fprintf(stderr, "Assembling failed\n");
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
         return RETURN_CODE_IO_FAILED;
     }
     // Write output
-    if (fwrite(binary, 1, (size_t)binary_length, output_file) != (size_t)binary_length) {
+    if (fwrite(binary, 1, (size_t) binary_length, output_file) != (size_t) binary_length) {
         fprintf(stderr, "Error writing output file: %s\n", output_file_name);
         fclose(output_file);
         free(binary);

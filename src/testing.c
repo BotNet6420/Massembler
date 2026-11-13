@@ -10,7 +10,7 @@
 #include <core/symbol_table.h>
 
 int main(void) {
-    FILE *file = fopen("/home/botnet64/Documents/projects/mano-basic-computer/assembler/test.txt", "r");
+    FILE *file = fopen("../test.txt", "r");
     if (file == NULL) {
         printf("Error opening file\n");
         return 1;

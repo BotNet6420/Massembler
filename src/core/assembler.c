@@ -17,6 +17,7 @@ typedef struct linked_char_list {
 } linked_char_list;
 
 void write_big_endian(uint16_t number, unsigned char *output);
+
 void free_linked_char_nodes(linked_char_list *head);
 
 /**
