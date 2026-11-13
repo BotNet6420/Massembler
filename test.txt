@@ -1,12 +1,13 @@
-
+/test comment on an empty line
 LDA SUB
-CMA
+CMA /test comment
 INC
-ADD MIN
-
+ADD MIN / test comment with space
+/ test comment on and empty line with space
 STA DIF
 HLT
 MIN, DEC 83
 SUB, DEC -23
 DIF, HEX 0
-END
+ORG 100 /test comment
+END/edge case (will expect newline if not behaving correctly)

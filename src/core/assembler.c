@@ -23,7 +23,7 @@ void free_linked_char_nodes(linked_char_list *head);
  * Perform the first assembler pass on the source code to generate
  * the symbol table for user labels with their addresses
  * @param size Amount of input lines
- * @param input char* array, each element being a null-terminated comment-striped line of input
+ * @param input char* array, each element being a null-terminated line of input
  * @return 0 on success, non-zero on failure
  */
 int first_pass(const int size, char *input[size]) {
@@ -59,6 +59,12 @@ int first_pass(const int size, char *input[size]) {
         strcpy(copy, line);
         error.line_number = file_line;
         error.text = line;
+
+        // remove comments
+        char *comment = strchr(copy, '/');
+        if (comment != NULL) {
+            *comment = '\0';
+        }
 
         char *part1 = strtok(copy, " \t\r\n");
         char *part2 = strtok(NULL, " \t\r\n");
@@ -436,7 +442,7 @@ int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell
 /**
  * Performs the assemblers second pass to generate binary code
  * @param size Amount of input line
- * @param input char* array, each element a null-terminated comment-stripped line of assembly
+ * @param input char* array, each element a null-terminated line of assembly
  * @param output_size Pointer to uint16_t used to output the size of the generated binary in bytes
  * @return unsigned char pointer to the binary equivalent of the input, NULL on errors. Memory must be freed by the caller
  */
@@ -484,9 +490,20 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
         line = input[i];
         char copy[strlen(line) + 1];
         strcpy(copy, line);
-        const char *instruction = line;
+        char instruction[strlen(line) + 1];
+        strcpy(instruction, line);
         error.line_number = file_line;
         error.text = line;
+
+        // remove comments
+        char *comment = strchr(copy, '/');
+        if (comment != NULL) {
+            *comment = '\0';
+        }
+        comment = strchr(instruction, '/');
+        if (comment != NULL) {
+            *comment = '\0';
+        }
 
         char *token = strtok(copy, " \t\r\n");
 
