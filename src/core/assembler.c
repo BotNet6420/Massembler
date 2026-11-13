@@ -10,6 +10,7 @@
 
 #include "logger.h"
 
+void write_big_endian(uint16_t number, unsigned char *output);
 
 /**
  * Perform the first assembler pass on the source code to generate
@@ -321,7 +322,8 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     }
 
 
-    *mem_cell = opcode_binary_code | address_binary_code | indirection_binary_code;
+    uint16_t binary = opcode_binary_code | address_binary_code | indirection_binary_code;
+    write_big_endian(binary, (unsigned char *) mem_cell);
     return 0;
 }
 
@@ -401,7 +403,8 @@ int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell
         return 1;
     }
 
-    *mem_cell = opcode_binary_code;
+    uint16_t binary = opcode_binary_code;
+    write_big_endian(binary, (unsigned char *) mem_cell);
     return 0;
 }
 
@@ -757,4 +760,8 @@ int second_pass(FILE *input) {
     error.character_number = strlen(line);
     log_stderr(caller, error, ERROR);
     return 1;
+}
+void write_big_endian(uint16_t number, unsigned char *output) {
+    output[0] = (unsigned char) (number >> 8);
+    output[1] = (unsigned char) (number & 0xFF);
 }
