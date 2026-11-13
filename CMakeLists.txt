@@ -19,24 +19,24 @@ target_include_directories(massembler_core
 )
 
 # CLI tool
-add_executable(massembler_cli
+add_executable(massembler
     src/main.c
 )
 
-target_link_libraries(massembler_cli
+target_link_libraries(massembler
     PRIVATE massembler_core
 )
 
 # Testing/Debugging executable
-add_executable(massembler_testing_cli
+add_executable(testing_cli
     src/testing.c
 )
 
-target_include_directories(massembler_testing_cli
+target_include_directories(testing_cli
     PRIVATE
         ${PROJECT_SOURCE_DIR}/src
 )
 
-target_link_libraries(massembler_testing_cli
+target_link_libraries(testing_cli
     PRIVATE massembler_core
 )
