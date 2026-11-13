@@ -70,7 +70,7 @@ int first_pass(const int size, char *input[size]) {
         // check for first column being a label
         if (part1[strlen(part1) - 1] == ',') {
             // address overflow
-            if (line_counter > 0xfff) {
+            if (line_counter > ADDRESS_MAX) {
                 caller.line_number = __LINE__ - 1;
                 char m[128] = "Instruction address too big";
                 char n[128];
@@ -86,7 +86,7 @@ int first_pass(const int size, char *input[size]) {
             if (!is_valid_label(part1)) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "Invalid label format";
-                error.character_number = strstr(line, part1) - line + 1;
+                error.character_number = (int) (strstr(line, part1) - line + 1);
                 log_stderr(caller, error, ERROR);
                 return 1;
             }
@@ -95,7 +95,7 @@ int first_pass(const int size, char *input[size]) {
             if (part2 == NULL) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "Labeled line missing instruction";
-                error.character_number = strstr(line, part1) - line + 1;
+                error.character_number = (int) (strstr(line, part1) - line + 1);
                 log_stderr(caller, error, ERROR);
                 return 1;
             }
@@ -104,14 +104,14 @@ int first_pass(const int size, char *input[size]) {
             if (strcmp(part2, "ORG") == 0) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "ORG instruction cannot have a label";
-                error.character_number = strstr(line, part1) - line + 1;
+                error.character_number = (int) (strstr(line, part1) - line + 1);
                 log_stderr(caller, error, ERROR);
                 return 1;
             }
             if (strcmp(part2, "END") == 0) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "END instruction cannot have a label";
-                error.character_number = strstr(line, part1) - line + 1;
+                error.character_number = (int) (strstr(line, part1) - line + 1);
                 log_stderr(caller, error, ERROR);
                 return 1;
             }
@@ -121,7 +121,7 @@ int first_pass(const int size, char *input[size]) {
             if (result == 1) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "Duplicated label";
-                error.character_number = strstr(line, part1) - line + 1;
+                error.character_number = (int) (strstr(line, part1) - line + 1);
                 log_stderr(caller, error, ERROR);
                 return 1;
             }
@@ -140,7 +140,7 @@ int first_pass(const int size, char *input[size]) {
             if (part2 == NULL) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "ORG instruction missing address operand";
-                error.character_number = strstr(line, part1) - line + 5;
+                error.character_number = (int) (strstr(line, part1) - line + 5);
                 log_stderr(caller, error, ERROR);
                 return 1;
             }
@@ -150,7 +150,7 @@ int first_pass(const int size, char *input[size]) {
             if (sscanf(part2, " %x", &number) != 1) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "Could not parse HEX address";
-                error.character_number = strstr(line, part2) - line + 1;
+                error.character_number = (int) (strstr(line, part2) - line + 1);
                 log_stderr(caller, error, ERROR);
                 return 1;
             }
@@ -161,7 +161,7 @@ int first_pass(const int size, char *input[size]) {
             if (sscanf(part2, " %x %n%c", &number, &n, &dummy) != 1) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "Could not parse HEX address";
-                error.character_number = strstr(line, part2) - line + n + 1;
+                error.character_number = (int) (strstr(line, part2) - line + n + 1);
                 log_stderr(caller, error, ERROR);
                 return 1;
             }
@@ -171,16 +171,16 @@ int first_pass(const int size, char *input[size]) {
             if (part3 != NULL) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "Expected newline";
-                error.character_number = strstr(line, part3) - line + 1;
+                error.character_number = (int) (strstr(line, part3) - line + 1);
                 log_stderr(caller, error, ERROR);
                 return 1;
             }
 
             // address out of bounds
-            if (number > 0xfff) {
+            if (number > ADDRESS_MAX) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "ORG address too big";
-                error.character_number = strstr(line, part2) - line + 1;
+                error.character_number = (int) (strstr(line, part2) - line + 1);
                 log_stderr(caller, error, ERROR);
                 return 1;
             }
@@ -193,7 +193,7 @@ int first_pass(const int size, char *input[size]) {
             if (part2 != NULL) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "Expected newline";
-                error.character_number = strstr(line, part2) - line + 1;
+                error.character_number = (int) (strstr(line, part2) - line + 1);
                 log_stderr(caller, error, ERROR);
                 return 1;
             }
@@ -202,14 +202,14 @@ int first_pass(const int size, char *input[size]) {
         }
 
         // address overflow
-        if (line_counter > 0xfff) {
+        if (line_counter > ADDRESS_MAX) {
             caller.line_number = __LINE__ - 1;
             char m[128] = "Instruction address too big";
             char n[128];
             sprintf(n, " (%04x)", line_counter);
             strcat(m, n);
             error.message = m;
-            error.character_number = strstr(line, part1) - line + 1;
+            error.character_number = (int) (strstr(line, part1) - line + 1);
             log_stderr(caller, error, ERROR);
             return 1;
         }
@@ -218,11 +218,18 @@ int first_pass(const int size, char *input[size]) {
     caller.line_number = __LINE__ - 1;
     error.message = "Reached EOF but no END instruction";
     error.line_number = file_line;
-    error.character_number = strlen(line);
+    error.character_number = (int) strlen(line);
     log_stderr(caller, error, ERROR);
     return 1;
 }
 
+/**
+ * Translate the lne of assembly to binary (for MRI instruction only)
+ * @param instruction Assembly text instruction to encode
+ * @param file_line Input text line number (used for error reporting)
+ * @param mem_cell The place to write the binary instruction to
+ * @return 0 on success, non-zero otherwise
+ */
 int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     caller_details caller = {
         .section_name = "assembler",
@@ -232,8 +239,6 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
         .text = instruction,
         .line_number = file_line,
     };
-
-    char buffer[LINE_LENGTH];
 
     if (instruction == NULL) {
         caller.line_number = __LINE__ - 1;
@@ -248,13 +253,13 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
         return 1;
     }
 
+    char buffer[strlen(instruction) + 1];
     strcpy(buffer, instruction);
     // advance line pointer to start of opcode
     char *copy = strchr(buffer, ',');
     if (copy == NULL) {
         copy = buffer;
-    }
-    else {
+    } else {
         copy += 1;
     }
     while (isspace((unsigned char)*copy)) {
@@ -281,7 +286,7 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     if (!is_memory_instruction(opcode)) {
         caller.line_number = __LINE__ - 1;
         error.message = "Invalid MRI";
-        error.character_number = strstr(instruction, opcode) - instruction + 1;
+        error.character_number = (int) (strstr(instruction, opcode) - instruction + 1);
         log_stderr(caller, error, ERROR);
         return 1;
     }
@@ -289,7 +294,7 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     if (get_memory_instruction_code(opcode, &opcode_binary_code) != 1) {
         caller.line_number = __LINE__ - 1;
         error.message = "MRI not found in symbol table";
-        error.character_number = strstr(instruction, opcode) - instruction + 1;
+        error.character_number = (int) (strstr(instruction, opcode) - instruction + 1);
         log_stderr(caller, error, ERROR);
         return 1;
     }
@@ -299,7 +304,7 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     if (address == NULL) {
         caller.line_number = __LINE__ - 1;
         error.message = "MRI missing address";
-        error.character_number = strstr(instruction, opcode) - instruction + strlen(opcode) + 2;
+        error.character_number = (int) (strstr(instruction, opcode) - instruction + strlen(opcode) + 2);
         log_stderr(caller, error, ERROR);
         return 1;
     }
@@ -307,7 +312,7 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     if (get_label_address(address, &address_binary_code) != 1) {
         caller.line_number = __LINE__ - 1;
         error.message = "Undefined label";
-        error.character_number = strstr(instruction, address) - instruction + 1;
+        error.character_number = (int) (strstr(instruction, address) - instruction + 1);
         log_stderr(caller, error, ERROR);
         return 1;
     }
@@ -320,7 +325,7 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
         } else {
             caller.line_number = __LINE__ - 1;
             error.message = "Expected I or newline";
-            error.character_number = strstr(instruction, indirection) - instruction + 1;
+            error.character_number = (int) (strstr(instruction, indirection) - instruction + 1);
             log_stderr(caller, error, ERROR);
             return 1;
         }
@@ -330,7 +335,7 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     if (token4 != NULL) {
         caller.line_number = __LINE__ - 1;
         error.message = "Expected newline";
-        error.character_number = strstr(instruction, token4) - instruction + 1;
+        error.character_number = (int) (strstr(instruction, token4) - instruction + 1);
         log_stderr(caller, error, ERROR);
         return 1;
     }
@@ -341,6 +346,13 @@ int translate_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     return 0;
 }
 
+/**
+ * Translate the lne of assembly to binary (for non-MRI instruction only)
+ * @param instruction Assembly text instruction to encode
+ * @param file_line Input text line number (used for error reporting)
+ * @param mem_cell The place to write the binary instruction to
+ * @return 0 on success, non-zero otherwise
+ */
 int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell) {
     caller_details caller = {
         .section_name = "assembler",
@@ -350,8 +362,6 @@ int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell
         .text = instruction,
         .line_number = file_line,
     };
-
-    char buffer[LINE_LENGTH];
 
     if (instruction == NULL) {
         caller.line_number = __LINE__ - 1;
@@ -366,13 +376,13 @@ int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell
         return 1;
     }
 
+    char buffer[strlen(instruction) + 1];
     strcpy(buffer, instruction);
     // advance line pointer to start of opcode
     char *copy = strchr(buffer, ',');
     if (copy == NULL) {
         copy = buffer;
-    }
-    else {
+    } else {
         copy += 1;
     }
     while (isspace((unsigned char)*copy)) {
@@ -395,7 +405,7 @@ int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell
     if (!is_non_memory_instruction(opcode)) {
         caller.line_number = __LINE__ - 1;
         error.message = "Invalid non-MRI";
-        error.character_number = strstr(instruction, opcode) - instruction + 1;
+        error.character_number = (int) (strstr(instruction, opcode) - instruction + 1);
         log_stderr(caller, error, ERROR);
         return 1;
     }
@@ -403,7 +413,7 @@ int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell
     if (get_non_memory_instruction_code(opcode, &opcode_binary_code) != 1) {
         caller.line_number = __LINE__ - 1;
         error.message = "non-MRI not found in symbol table";
-        error.character_number = strstr(instruction, opcode) - instruction + 1;
+        error.character_number = (int) (strstr(instruction, opcode) - instruction + 1);
         log_stderr(caller, error, ERROR);
         return 1;
     }
@@ -412,7 +422,7 @@ int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell
     if (token2 != NULL) {
         caller.line_number = __LINE__ - 1;
         error.message = "Expected newline";
-        error.character_number = strstr(instruction, token2) - instruction + 1;
+        error.character_number = (int) (strstr(instruction, token2) - instruction + 1);
         log_stderr(caller, error, ERROR);
         return 1;
     }
@@ -422,6 +432,13 @@ int translate_non_MRI(const char *instruction, int file_line, uint16_t *mem_cell
     return 0;
 }
 
+/**
+ * Performs the assemblers second pass to generate binary code
+ * @param size Amount of input line
+ * @param input char* array, each element a null-terminated comment-stripped line of assembly
+ * @param output_size Pointer to uint16_t used to output the size of the generated binary in bytes
+ * @return unsigned char pointer to the binary equivalent of the input, NULL on errors. Memory must be freed by the caller
+ */
 unsigned char *second_pass(const int size, char *input[size], uint16_t *output_size) {
     caller_details caller = {
         .section_name = "assembler",
@@ -472,6 +489,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
 
         char *token = strtok(copy, " \t\r\n");
 
+        // skip empty lines
         if (token == NULL) {
             continue;
         }
@@ -485,7 +503,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
             if (token == NULL) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "Labeled line missing instruction";
-                error.character_number = strstr(line, label) - line + 1;
+                error.character_number = (int) (strstr(line, label) - line + 1);
                 log_stderr(caller, error, ERROR);
                 free(output_buffer);
                 return NULL;
@@ -495,7 +513,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
             if (strcmp(token, "ORG") == 0) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "ORG instruction cannot have a label";
-                error.character_number = strstr(line, label) - line + 1;
+                error.character_number = (int) (strstr(line, label) - line + 1);
                 log_stderr(caller, error, ERROR);
                 free(output_buffer);
                 return NULL;
@@ -503,7 +521,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
             if (strcmp(token, "END") == 0) {
                 caller.line_number = __LINE__ - 1;
                 error.message = "END instruction cannot have a label";
-                error.character_number = strstr(line, label) - line + 1;
+                error.character_number = (int) (strstr(line, label) - line + 1);
                 log_stderr(caller, error, ERROR);
                 free(output_buffer);
                 return NULL;
@@ -513,14 +531,14 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
         // MRI
         if (is_memory_instruction(token)) {
             // address overflow
-            if (line_counter > 0xfff) {
+            if (line_counter > ADDRESS_MAX) {
                 caller.line_number = __LINE__ - 1;
                 char m[128] = "Instruction address too big";
                 char n[128];
                 sprintf(n, " (%04x)", line_counter);
                 strcat(m, n);
                 error.message = m;
-                error.character_number = strstr(line, token) - line + 1;
+                error.character_number = (int) (strstr(line, token) - line + 1);
                 log_stderr(caller, error, ERROR);
                 free(output_buffer);
                 return NULL;
@@ -540,14 +558,14 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
         // non-MRI
         if (is_non_memory_instruction(token)) {
             // address overflow
-            if (line_counter > 0xfff) {
+            if (line_counter > ADDRESS_MAX) {
                 caller.line_number = __LINE__ - 1;
                 char m[128] = "Instruction address too big";
                 char n[128];
                 sprintf(n, " (%04x)", line_counter);
                 strcat(m, n);
                 error.message = m;
-                error.character_number = strstr(line, token) - line + 1;
+                error.character_number = (int) (strstr(line, token) - line + 1);
                 log_stderr(caller, error, ERROR);
                 free(output_buffer);
                 return NULL;
@@ -576,7 +594,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (token2 == NULL) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "ORG instruction missing address operand";
-                        error.character_number = strstr(line, token) - line + 5;
+                        error.character_number = (int) (strstr(line, token) - line + 5);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -587,7 +605,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (sscanf(token2, " %x", &number) != 1) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "Could not parse HEX address";
-                        error.character_number = strstr(line, token2) - line + 1;
+                        error.character_number = (int) (strstr(line, token2) - line + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -599,7 +617,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (sscanf(token2, " %x %n%c", &number, &n, &dummy) != 1) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "Could not parse HEX address";
-                        error.character_number = strstr(line, token2) - line + n + 1;
+                        error.character_number = (int) (strstr(line, token2) - line + n + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -609,17 +627,17 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (token3 != NULL) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "Expected newline";
-                        error.character_number = strstr(line, token3) - line + 1;
+                        error.character_number = (int) (strstr(line, token3) - line + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
                     }
 
                     // address out of bounds
-                    if (number > 0xfff) {
+                    if (number > ADDRESS_MAX) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "ORG address too big";
-                        error.character_number = strstr(line, token2) - line + 1;
+                        error.character_number = (int) (strstr(line, token2) - line + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -632,7 +650,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (token2 != NULL) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "Expected newline";
-                        error.character_number = strstr(line, token2) - line + 1;
+                        error.character_number = (int) (strstr(line, token2) - line + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -649,14 +667,14 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
 
 
             // address overflow
-            if (line_counter > 0xfff) {
+            if (line_counter > ADDRESS_MAX) {
                 caller.line_number = __LINE__ - 1;
                 char m[128] = "Instruction address too big";
                 char n[128];
                 sprintf(n, " (%04x)", line_counter);
                 strcat(m, n);
                 error.message = m;
-                error.character_number = strstr(line, token) - line + 1;
+                error.character_number = (int) (strstr(line, token) - line + 1);
                 log_stderr(caller, error, ERROR);
                 free(output_buffer);
                 return NULL;
@@ -666,7 +684,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (token2 == NULL) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "DEC instruction missing operand";
-                        error.character_number = strstr(line, token) - line + 5;
+                        error.character_number = (int) (strstr(line, token) - line + 5);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -677,7 +695,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (sscanf(token2, " %d", &number) != 1) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "Could not parse decimal number";
-                        error.character_number = strstr(line, token2) - line + 1;
+                        error.character_number = (int) (strstr(line, token2) - line + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -689,7 +707,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (sscanf(token2, " %d %n%c", &number, &n, &dummy) != 1) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "Could not parse decimal number";
-                        error.character_number = strstr(line, token2) - line + n + 1;
+                        error.character_number = (int) (strstr(line, token2) - line + n + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -699,7 +717,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (token3 != NULL) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "Expected newline";
-                        error.character_number = strstr(line, token3) - line + 1;
+                        error.character_number = (int) (strstr(line, token3) - line + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -708,7 +726,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (number > INT16_MAX) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "decimal number too big";
-                        error.character_number = strstr(line, token2) - line + 1;
+                        error.character_number = (int) (strstr(line, token2) - line + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -717,13 +735,13 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (number < INT16_MIN) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "decimal number too small";
-                        error.character_number = strstr(line, token2) - line + 1;
+                        error.character_number = (int) (strstr(line, token2) - line + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
                     }
 
-                    write_big_endian((uint16_t) number, (unsigned char*) &output_buffer[line_counter]);
+                    write_big_endian((uint16_t) number, (unsigned char *) &output_buffer[line_counter]);
                     line_counter++;
                     continue;
                 }
@@ -732,7 +750,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (token2 == NULL) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "HEX instruction missing operand";
-                        error.character_number = strstr(line, token) - line + 5;
+                        error.character_number = (int) (strstr(line, token) - line + 5);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -743,7 +761,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (sscanf(token2, " %x", &number) != 1) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "Could not parse hexadecimal number";
-                        error.character_number = strstr(line, token2) - line + 1;
+                        error.character_number = (int) (strstr(line, token2) - line + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -755,7 +773,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (sscanf(token2, " %x %n%c", &number, &n, &dummy) != 1) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "Could not parse hexadecimal number";
-                        error.character_number = strstr(line, token2) - line + n + 1;
+                        error.character_number = (int) (strstr(line, token2) - line + n + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -765,7 +783,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (token3 != NULL) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "Expected newline";
-                        error.character_number = strstr(line, token3) - line + 1;
+                        error.character_number = (int) (strstr(line, token3) - line + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
@@ -774,13 +792,13 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
                     if (number > UINT16_MAX) {
                         caller.line_number = __LINE__ - 1;
                         error.message = "hexadecimal number too big";
-                        error.character_number = strstr(line, token2) - line + 1;
+                        error.character_number = (int) (strstr(line, token2) - line + 1);
                         log_stderr(caller, error, ERROR);
                         free(output_buffer);
                         return NULL;
                     }
 
-                    write_big_endian((uint16_t) number, (unsigned char*) &output_buffer[line_counter]);
+                    write_big_endian((uint16_t) number, (unsigned char *) &output_buffer[line_counter]);
                     line_counter++;
                     continue;
                 }
@@ -805,7 +823,7 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
 
         caller.line_number = __LINE__ - 1;
         error.message = "Invalid instruction";
-        error.character_number = strstr(line, token) - line + 1;
+        error.character_number = (int) (strstr(line, token) - line + 1);
         log_stderr(caller, error, ERROR);
         free(output_buffer);
         return NULL;
@@ -813,13 +831,20 @@ unsigned char *second_pass(const int size, char *input[size], uint16_t *output_s
     caller.line_number = __LINE__ - 1;
     error.message = "Reached EOF but no END instruction";
     error.line_number = file_line;
-    error.character_number = strlen(line);
+    error.character_number = (int) (strlen(line));
     log_stderr(caller, error, ERROR);
     free(output_buffer);
     return NULL;
 }
 
-unsigned char * assemble(char input[], int *output_length) {
+/**
+ * Generate binary instruction for Mano's basic computer
+ * from the given source assembly code
+ * @param input null-terminated string of input assembly code to process
+ * @param output_length integer pointer to return the size of the output in bytes
+ * @return Pointer to the generated code, NULL on errors. Memory must be freed by the caller
+ */
+unsigned char *assemble(char input[], int *output_length) {
     int line_count = 1;
     linked_char_list *linked_lines = NULL;
 
@@ -854,13 +879,13 @@ unsigned char * assemble(char input[], int *output_length) {
     if (first_pass(line_count, lines) != 0) {
         exit_code = 1;
     }
-
     uint16_t output_size = 0;
     unsigned char *object = NULL;
     if (exit_code == 0) {
         object = second_pass(line_count, lines, &output_size);
     }
 
+    // free memory
     free(lines);
     free_labels();
 
@@ -870,6 +895,12 @@ unsigned char * assemble(char input[], int *output_length) {
     return object;
 }
 
+/**
+ * Writes the given number such that the first byte is guaranteed to be MSB
+ * and the second byte is guaranteed to be LSB (not tested on big-endian machines)
+ * @param number The number to write
+ * @param output The place to write to
+ */
 void write_big_endian(uint16_t number, unsigned char *output) {
     output[0] = (unsigned char) (number >> 8);
     output[1] = (unsigned char) (number & 0xFF);

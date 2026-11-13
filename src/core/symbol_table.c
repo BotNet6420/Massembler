@@ -227,7 +227,7 @@ int is_label(const char *token) {
  * @return 1 if the label exists in the symbol table, 0 if it does not
  */
 int get_label_address(const char *token, uint16_t *address) {
-    label * symbol = get_label(token);
+    label *symbol = get_label(token);
     if (symbol == NULL) {
         return 0;
     }

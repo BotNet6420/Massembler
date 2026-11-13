@@ -6,15 +6,15 @@
 #define ASSEMBLER_ERROR_HANDLER_H
 
 typedef struct {
-    char *section_name;
-    char *subsection_name;
+    const char *section_name;
+    const char *subsection_name;
     int line_number;
     int character_number;
 } caller_details;
 
 typedef struct {
-    char *message;
-    char *text;
+    const char *message;
+    const char *text;
     int line_number;
     int character_number;
 } error_details;
