@@ -78,3 +78,26 @@ Blocks execution while doing so.
 
 #### Returns
 Nothing.
+
+### [Integer to Alphabet](integer_to_alphabet.asm)
+Converts the given number into a null-terminated string and returns the address of it.
+- Depends on [Modulo](#Modulo)
+- Depends on [Division](#Division)
+- Needs a heap pointer
+
+#### Arguments List
+1. Inside AC: The number to convert, must be positive
+
+#### Other labels
+1. `FIG`
+2. `ITL`
+3. `IT0`
+4. `IT1`
+5. `IT2`
+6. `IT3`
+7. `IT4`
+8. `IT5`
+9. `IT6`
+
+#### Returns
+A pointer to the start of a null-terminated string.
