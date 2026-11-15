@@ -16,3 +16,18 @@ Subtracts the first argument from the second and returns the result.
 
 #### Return Value
 The result of the subtraction.
+
+### [Multiplication](multiplication.asm)
+Multiplies the first argument by the second and returns the result.
+
+#### Arguments List
+1. `MA1`: The number to multiply
+2. `MA2`: The number to multiply by
+
+#### Other Labels
+1. `SKP`
+2. `CHK`
+3. `LOP`
+
+#### Return Value
+The result of the multiplication.
