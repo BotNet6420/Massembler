@@ -2,7 +2,8 @@
 Some example programs and useful subroutines written for the Basic Computer. 
 
 ## Subroutine calling convention
-- Put the arguments for the subroutine immediately after the `BSA` instruction.
+- Put single arguments inside AC and then `BSA`
+- For more than 1 argument, put them immediately after the `BSA` instruction.
 - The returned result will be inside AC
 
 ## Examples List
@@ -62,3 +63,18 @@ Divides argument 2 by argument 1 and returns the remainder.
 
 #### Return Value
 The remainder of integer division.
+
+### [Print String](print_string.asm)
+Prints a null terminated string to the output.
+Blocks execution while doing so.
+
+#### Arguments List
+1. Inside AC: Address to the first character of a null-terminated string
+
+#### Other Labels
+1. `P`
+2. `P1`
+3. `P1`
+
+#### Returns
+Nothing.
