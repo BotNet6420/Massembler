@@ -47,3 +47,18 @@ Divides argument 2 by argument 1 and returns the result.
 
 #### Return Value
 The result of integer division.
+
+### [Modulo](modulo.asm)
+Divides argument 2 by argument 1 and returns the remainder.
+
+#### Arguments List
+1. `MD1`: Numerator, must be Positive
+2. `MD2`: Denominator, must be positive
+
+#### Other Labels
+1. `LM2`
+2. `MKP`
+3. `MOP`
+
+#### Return Value
+The remainder of integer division.
