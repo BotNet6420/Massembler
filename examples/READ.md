@@ -31,3 +31,19 @@ Multiplies the first argument by the second and returns the result.
 
 #### Return Value
 The result of the multiplication.
+
+### [Division](division.asm)
+Divides argument 2 by argument 1 and returns the result.
+
+#### Arguments List
+1. `DA1`: Numerator, must be Positive
+2. `DA2`: Denominator, must be positive
+
+#### Other Labels
+1. `LD2`
+2. `SKP`
+3. `LOP`
+4. `QOT`
+
+#### Return Value
+The result of integer division.
