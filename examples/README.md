@@ -101,3 +101,31 @@ Converts the given number into a null-terminated string and returns the address 
 
 #### Returns
 A pointer to the start of a null-terminated string.
+
+### [Alphabet to Integer](alphabet_to_integer.asm)
+Converts the given null-terminated string into a positive integer.
+Stops converting at the first non-digit ASCII character.
+- Depends on [Multiplication](#multiplication)
+
+#### Arguments List
+1. Inside AC: The pointer to the null-terminated string to convert
+
+#### Other Labels
+1. `AT0`
+2. `AT1`
+3. `AT2`
+4. `AT3`
+5. `AT4`
+6. `AT5`
+7. `AT6`
+8. `AT7`
+9. `AT8`
+10. `AT9`
+11. `ATE`
+12. `ATC`
+13. `ATL`
+14. `ATR`
+15. `ATV`
+
+#### Returns
+The integer conversion of the given string.
