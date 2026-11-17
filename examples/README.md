@@ -6,7 +6,13 @@ Some example programs and useful subroutines written for the Basic Computer.
 - For more than 1 argument, put them immediately after the `BSA` instruction.
 - The returned result will be inside AC
 
+---
+
 ## Examples List
+
+### [Division App](app.asm)
+Reads 2 positive numbers from the input, divides them, and prints the result to the output.
+The ultimate program utilizing all following example programs/functions (except [Subtraction](#Subtraction)).
 
 ### [Subtraction](subtraction.asm)
 Subtracts the first argument from the second and returns the result.
