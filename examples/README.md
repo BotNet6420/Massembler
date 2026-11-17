@@ -129,3 +129,31 @@ Stops converting at the first non-digit ASCII character.
 
 #### Returns
 The integer conversion of the given string.
+
+### [Read Line](read_line.asm)
+Reads one line from the input and returns the null-terminated string.
+Blocks the execution while doing so.
+Can optionally echo the characters back to the output.
+- Needs a heap pointer
+
+#### Arguments List
+1. Inside AC: 0 = No echo back, non-zero = Do echo back
+
+### Other Labels
+1. `RL1`
+2. `RL2`
+3. `RL3`
+4. `RL4`
+5. `RL5`
+6. `RL6`
+7. `RL7`
+8. `RLA`
+9. `RLB`
+10. `RLC`
+11. `RLD`
+12. `RLE`
+13. `RLF`
+14. `RLG`
+
+#### Returns
+The pointer to the string.
