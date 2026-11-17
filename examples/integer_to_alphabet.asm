@@ -6,7 +6,7 @@ HLT
 NUM, DEC 137
 HEP, HEX 0xFFF // Heap pointer
 
-ORG 10
+
 // Converts the given integer to a string
 // Returns the pointer to the start of the string
 ITA, HEX 0
@@ -55,7 +55,7 @@ IT6, DEC 0
 DEC 10
 STA IT1 // store the shifted number
 STA IT6
-ISZ IT3// loop counter
+ISZ IT3 // loop counter
 BUN ITL
 // Return the result
 LDA IT4 // It's pointing 1 too low because of the loop
